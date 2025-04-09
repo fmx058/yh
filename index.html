@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>千变万化闪烁摩天轮 (修复版)</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000000; /* 纯黑背景 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="ferrisWheelCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('ferrisWheelCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- 配置参数 ---
+        const wheelRadius = 250;
+        const numSpokes = 24;
+        const numStars = 75;
+        const lightsPerSpoke = 20;
+        const lightAnimationSpeed = 0.05;
+        const baseLightSize = 3.0;
+        const modeDuration = 700;
+        const numRimLights = 120;
+        const rimLightAnimationSpeed = 0.09;
+        const globalGlowBase = 10;
+
+        // --- 颜色配置 ---
+        const structureColor = '#101018';
+        const spokeColor = '#15151D';
+        const hubColor = '#202028';
+        const taijiDotLightColor = '#3377ff'; // 阳鱼中的阴眼 (蓝色)
+        const taijiDotDarkColor = '#ffffff';  // 阴鱼中的阳眼 (白色)
+        const rimColors = ['#ff00ff', '#00ffff', '#ffff00', '#ff6eff', '#6effff'];
+
+        let canvasWidth, canvasHeight, centerX, centerY;
+        let stars = [];
+        let time = 0;
+        let currentMode = 0;
+        const numModes = 10;
+
+        // --- 初始化 ---
+        function setupCanvas() { /* ... (代码同前) ... */
+            canvasWidth = window.innerWidth; canvasHeight = window.innerHeight;
+            canvas.width = canvasWidth; canvas.height = canvasHeight;
+            centerX = canvasWidth / 2; centerY = canvasHeight / 2 + wheelRadius * 0.1;
+            stars = [];
+            for (let i = 0; i < numStars; i++) { stars.push({ x: Math.random() * canvasWidth, y: Math.random() * canvasHeight, radius: Math.random() * 0.6 + 0.1, alpha: Math.random() * 0.25 + 0.05 }); }
+        }
+
+        // --- 绘制函数 ---
+        function drawStars() { /* ... (代码同前) ... */
+            const starGlowColor = 'rgba(220, 220, 255, 0.5)';
+            stars.forEach(star => { star.alpha += (Math.random() - 0.5) * 0.06; star.alpha = Math.max(0.1, Math.min(0.9, star.alpha)); if (star.alpha > 0.6) { ctx.shadowColor = starGlowColor; ctx.shadowBlur = star.radius * 4; } else { ctx.shadowBlur = 0; } ctx.beginPath(); ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2); ctx.fillStyle = `rgba(220, 220, 255, ${star.alpha})`; ctx.fill(); });
+            ctx.shadowBlur = 0; ctx.shadowColor = 'transparent';
+        }
+        function drawStructure(alpha = 1.0) { /* ... (代码同前) ... */
+            ctx.globalAlpha = alpha; ctx.strokeStyle = structureColor; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.shadowBlur = 0;
+            const groundY = centerY + wheelRadius + 15; const baseSpread = wheelRadius * 0.8;
+            ctx.beginPath(); ctx.moveTo(centerX - baseSpread / 2, groundY); ctx.lineTo(centerX, centerY); ctx.lineTo(centerX + baseSpread / 2, groundY); ctx.stroke();
+            ctx.globalAlpha = 1.0;
+        }
+        function drawWheelStructure(alpha = 1.0) { /* ... (代码同前) ... */
+             ctx.globalAlpha = alpha; ctx.strokeStyle = structureColor; ctx.lineWidth = 4; ctx.shadowBlur = 0;
+             ctx.beginPath(); ctx.arc(centerX, centerY, wheelRadius, 0, Math.PI * 2); ctx.stroke();
+             ctx.strokeStyle = spokeColor; ctx.lineWidth = 2;
+             for (let i = 0; i < numSpokes; i++) { const angle = (Math.PI * 2 / numSpokes) * i; const endX = centerX + Math.cos(angle) * wheelRadius; const endY = centerY + Math.sin(angle) * wheelRadius; ctx.beginPath(); ctx.moveTo(centerX, centerY); ctx.lineTo(endX, endY); ctx.stroke(); }
+             ctx.fillStyle = hubColor; ctx.beginPath(); ctx.arc(centerX, centerY, wheelRadius * 0.07, 0, Math.PI * 2); ctx.fill();
+             ctx.strokeStyle = structureColor; ctx.lineWidth = 1.5; ctx.stroke(); ctx.globalAlpha = 1.0;
+        }
+
+        // --- 灯光模式绘制函数 ---
+        function drawSingleLight(x, y, size, color, alpha, glowColor, glowRadius) { /* ... (代码同前) ... */
+             ctx.shadowColor = glowColor; ctx.shadowBlur = glowRadius; ctx.fillStyle = color; ctx.globalAlpha = alpha;
+             ctx.beginPath(); ctx.arc(x, y, size / 2, 0, Math.PI * 2); ctx.fill();
+        }
+        function drawSingleSquareLight(x, y, size, rotation, color, alpha, glowColor, glowRadius) { /* ... (代码同前) ... */
+            ctx.shadowColor = glowColor; ctx.shadowBlur = glowRadius; ctx.fillStyle = color; ctx.globalAlpha = alpha;
+            ctx.save(); ctx.translate(x, y); ctx.rotate(rotation); ctx.beginPath(); ctx.rect(-size / 2, -size / 2, size, size); ctx.fill(); ctx.restore();
+        }
+
+        // 模式 0: 默认
+        function drawLightsMode0() {
+            try { /* ... (代码同前) ... */
+                const glowRadiusBase = globalGlowBase;
+                for (let i = 0; i < numSpokes; i++) { const spokeAngle = (Math.PI * 2 / numSpokes) * i; for (let j = 0; j < lightsPerSpoke; j++) { const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5); const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke; const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke; const timePhase = time * lightAnimationSpeed; const wavePosition = (timePhase * 6 + i * 0.5) % lightsPerSpoke; const distToWave = Math.abs(j - wavePosition); const brightness = Math.exp(-Math.pow(distToWave / 2.5, 2)); if (brightness > 0.05) { const hue = (time * 7 + i * 20 + j * 7) % 360; const saturation = 100; const lightness = 65 + brightness * 35; const alpha = brightness * 0.8 + 0.2; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${80 + brightness * 10}%, ${alpha * 0.8})`; const shapeType = Math.random() < 0.6 ? 'circle' : 'square'; const currentSize = baseLightSize * (0.7 + brightness * 2.5); const glowRadius = glowRadiusBase * (0.7 + brightness * 2.0); if (shapeType === 'circle') { drawSingleLight(lightX, lightY, currentSize, color, alpha, glowColor, glowRadius); } else { const rotation = time * 0.02 + i * 0.2; drawSingleSquareLight(lightX, lightY, currentSize, rotation, color, alpha, glowColor, glowRadius); } } } }
+            } catch (error) { console.error("Error in drawLightsMode0:", error); }
+            finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+
+        // 模式 1: 旋转彩虹太极 (**逻辑调整**)
+        function drawLightsMode1_Taijitu() {
+            try {
+                const glowRadiusBase = globalGlowBase - 1;
+                const taijiRotation = time * 0.018;
+                const taijiRadius = wheelRadius * 0.88;
+                const dotRadius = taijiRadius * 0.15;
+                const dotOffset = taijiRadius * 0.5;
+
+                for (let i = 0; i < numSpokes; i++) {
+                    const spokeAngle = (Math.PI * 2 / numSpokes) * i;
+                    for (let j = 0; j < lightsPerSpoke; j++) {
+                        const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5);
+                        const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke;
+                        const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke;
+
+                        const dx = lightX - centerX;
+                        const dy = lightY - centerY;
+                        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+                        let angleFromCenter = Math.atan2(dy, dx) - taijiRotation;
+                        angleFromCenter = (angleFromCenter % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
+
+                        let targetColor = null;
+                        let brightness = 0;
+                        let isEye = false;
+                        let hue = 0; // **先声明 hue**
+                        let saturation = 100;
+                        let lightness = 0;
+                        let glowColor = null;
+
+                        if (distFromCenter <= taijiRadius) {
+                            brightness = 0.95;
+                            const isYang = angleFromCenter < Math.PI;
+
+                            // **先计算基础 HUE**
+                            hue = (angleFromCenter / (Math.PI * 2) * 360) % 360;
+
+                            // 计算眼睛位置
+                            const eyeAngleYang = Math.PI / 2 + taijiRotation;
+                            const eyeAngleYin = 3 * Math.PI / 2 + taijiRotation;
+                            const eyeCenterYangX = centerX + Math.cos(eyeAngleYang) * dotOffset;
+                            const eyeCenterYangY = centerY + Math.sin(eyeAngleYang) * dotOffset;
+                            const eyeCenterYinX = centerX + Math.cos(eyeAngleYin) * dotOffset;
+                            const eyeCenterYinY = centerY + Math.sin(eyeAngleYin) * dotOffset;
+
+                            // 判断是否在眼内
+                            if (Math.sqrt(Math.pow(lightX - eyeCenterYangX, 2) + Math.pow(lightY - eyeCenterYangY, 2)) <= dotRadius) {
+                                targetColor = taijiDotLightColor; // 阳区的阴眼颜色
+                                brightness = 1.0;
+                                isEye = true;
+                                glowColor = targetColor; // 眼的辉光用自身颜色
+                            } else if (Math.sqrt(Math.pow(lightX - eyeCenterYinX, 2) + Math.pow(lightY - eyeCenterYinY, 2)) <= dotRadius) {
+                                targetColor = taijiDotDarkColor; // 阴区的阳眼颜色
+                                brightness = 1.0;
+                                isEye = true;
+                                glowColor = targetColor; // 眼的辉光用自身颜色
+                            }
+
+                            // 如果不是眼，计算 HSL 颜色和辉光
+                            if (!isEye) {
+                                if (!isYang) { // 阴区色相偏移
+                                    hue = (hue + 180) % 360;
+                                }
+                                lightness = isYang ? (65 + brightness * 35) : (55 + brightness * 35);
+                                targetColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                                glowColor = `hsla(${hue}, ${saturation}%, ${isYang ? 80 : 70}%, ${(brightness * 0.8 + 0.15) * 0.7})`; // **确保 hue 对辉光有效**
+                            }
+
+                            // 边缘淡出
+                            const edgeFade = 1.0 - Math.pow(distFromCenter / taijiRadius, 12);
+                            brightness *= edgeFade;
+                        }
+
+                        if (brightness > 0.1) {
+                            const size = baseLightSize * (isEye ? 1.2 : 0.9 + brightness * 1.1);
+                            const alpha = brightness * 0.85 + 0.15;
+                            const glowRadius = glowRadiusBase * brightness * (isEye ? 1.2 : 1.0);
+                            // **确保 glowColor 有值**
+                            if (!glowColor) glowColor = targetColor; // 备用
+
+                            drawSingleLight(lightX, lightY, size, targetColor, alpha, glowColor, glowRadius);
+                        }
+                    }
+                }
+            } catch (error) { console.error("Error in drawLightsMode1_Taijitu:", error); }
+            finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+
+        // 模式 2: 蝴蝶
+        function drawLightsMode2_Butterfly() { /* ... (代码同前) ... */
+            try { const butterflySize = wheelRadius * 0.95; const flapSpeed = 0.1; const numParticles = 200; const glowRadiusBase = globalGlowBase + 1; const flapAngle = Math.sin(time * flapSpeed) * (Math.PI / 5.0); const butterflyCenterX = centerX; const butterflyCenterY = centerY - wheelRadius * 0.1 + Math.sin(time * 0.04) * 30; for (let i = 0; i < numParticles; i++) { const side = (i < numParticles / 2) ? -1 : 1; const angleOffset = (Math.random() - 0.5) * Math.PI * 0.9; const distFactor = Math.random(); const dist = distFactor * butterflySize * (0.35 + Math.abs(Math.cos(angleOffset)) * 0.65); const baseAngle = side * (Math.PI / 2.3); const currentFlap = side * flapAngle * Math.pow(dist / butterflySize, 0.6); const currentAngle = baseAngle + angleOffset + currentFlap; const particleX = butterflyCenterX + Math.cos(currentAngle) * dist; const particleY = butterflyCenterY + Math.sin(currentAngle) * dist; const brightness = 0.7 + Math.random() * 0.3; const size = baseLightSize * (0.7 + brightness * 1.9); const hue = (time * 5 + dist * 0.7 + Math.sin(time*0.12+i*0.1)*25 ) % 360; const saturation = 100; const lightness = 65 + brightness * 35; const alpha = brightness * 0.75 + 0.2; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${80 + brightness * 10}%, ${alpha * 0.75})`; const glowRadius = glowRadiusBase * brightness; drawSingleLight(particleX, particleY, size, color, alpha, glowColor, glowRadius); } } catch (error) { console.error("Error in drawLightsMode2_Butterfly:", error); } finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+        // 模式 3: 中心发散
+        function drawLightsMode3_CenterOut() { /* ... (代码同前) ... */
+            try { const glowRadiusBase = globalGlowBase; const waveSpeed = 10; const waveWidth = 5; for (let i = 0; i < numSpokes; i++) { const spokeAngle = (Math.PI * 2 / numSpokes) * i; for (let j = 0; j < lightsPerSpoke; j++) { const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5); const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke; const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke; const timePhase = time * lightAnimationSpeed; const wavePosition = (timePhase * waveSpeed) % (lightsPerSpoke + waveWidth); const distToWave = Math.abs(j - wavePosition); const brightness = Math.max(0, 1 - distToWave / waveWidth); if (brightness > 0.05) { const hue = (time * 4 + i * 12) % 360; const saturation = 100; const lightness = 65 + brightness * 35; const alpha = brightness * 0.8 + 0.2; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${80 + brightness * 10}%, ${alpha * 0.8})`; const currentSize = baseLightSize * (0.6 + brightness * 2.0); const glowRadius = glowRadiusBase * (0.6 + brightness * 1.6); drawSingleLight(lightX, lightY, currentSize, color, alpha, glowColor, glowRadius); } } } } catch (error) { console.error("Error in drawLightsMode3_CenterOut:", error); } finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+        // 模式 4: 外围聚拢
+        function drawLightsMode4_PeripheryIn() { /* ... (代码同前) ... */
+            try { const glowRadiusBase = globalGlowBase; const waveSpeed = 10; const waveWidth = 5; for (let i = 0; i < numSpokes; i++) { const spokeAngle = (Math.PI * 2 / numSpokes) * i; for (let j = 0; j < lightsPerSpoke; j++) { const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5); const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke; const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke; const timePhase = time * lightAnimationSpeed; const wavePosition = (lightsPerSpoke - 1 - (timePhase * waveSpeed) % (lightsPerSpoke + waveWidth)); const distToWave = Math.abs(j - wavePosition); const brightness = Math.max(0, 1 - distToWave / waveWidth); if (brightness > 0.05) { const hue = (time * -4 + i * 12) % 360; const saturation = 100; const lightness = 65 + brightness * 35; const alpha = brightness * 0.8 + 0.2; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${80 + brightness * 10}%, ${alpha * 0.8})`; const currentSize = baseLightSize * (0.6 + brightness * 2.0); const glowRadius = glowRadiusBase * (0.6 + brightness * 1.6); drawSingleLight(lightX, lightY, currentSize, color, alpha, glowColor, glowRadius); } } } } catch (error) { console.error("Error in drawLightsMode4_PeripheryIn:", error); } finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+        // 模式 5: 螺旋扩散
+        function drawLightsMode5_Spiral() { /* ... (代码同前) ... */
+            try { const glowRadiusBase = globalGlowBase; const spiralSpeed = 12; const rotationSpeed = 0.03; const waveWidth = 3; for (let i = 0; i < numSpokes; i++) { const spokeAngle = (Math.PI * 2 / numSpokes) * i; for (let j = 0; j < lightsPerSpoke; j++) { const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5); const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke; const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke; const timePhase = time * lightAnimationSpeed; const targetRadiusIndex = (timePhase * spiralSpeed) % (lightsPerSpoke + waveWidth); const targetAngle = (timePhase * rotationSpeed * Math.PI * 2) % (Math.PI * 2); const distRadial = Math.abs(j - targetRadiusIndex); let angleDiff = Math.abs(spokeAngle - targetAngle); angleDiff = Math.min(angleDiff, Math.PI * 2 - angleDiff); const brightnessRadial = Math.exp(-Math.pow(distRadial / waveWidth, 2)); const brightnessAngular = Math.exp(-Math.pow(angleDiff / (Math.PI / numSpokes * 2), 2)); const brightness = brightnessRadial * brightnessAngular; if (brightness > 0.05) { const hue = (targetAngle * (180 / Math.PI) + j * 5) % 360; const saturation = 100; const lightness = 65 + brightness * 35; const alpha = brightness * 0.8 + 0.2; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${80 + brightness * 10}%, ${alpha * 0.8})`; const currentSize = baseLightSize * (0.6 + brightness * 2.0); const glowRadius = glowRadiusBase * (0.6 + brightness * 1.6); drawSingleLight(lightX, lightY, currentSize, color, alpha, glowColor, glowRadius); } } } } catch (error) { console.error("Error in drawLightsMode5_Spiral:", error); } finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+        // 模式 6: 旋转彩虹
+        function drawLightsMode6_Rainbow() { /* ... (代码同前) ... */
+            try { const glowRadiusBase = globalGlowBase - 1; const rainbowRotationSpeed = 0.02; const pulseSpeed = 0.08; for (let i = 0; i < numSpokes; i++) { const spokeAngle = (Math.PI * 2 / numSpokes) * i; for (let j = 0; j < lightsPerSpoke; j++) { const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5); const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke; const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke; const hue = ((spokeAngle + Math.PI) / (Math.PI * 2) * 360 + time * rainbowRotationSpeed * (180 / Math.PI)) % 360; const pulse = 0.7 + Math.sin(time * pulseSpeed + j * 0.3 + i * 0.1) * 0.3; const brightness = pulse; const saturation = 100; const lightness = 60 + brightness * 40; const alpha = brightness * 0.7 + 0.3; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${75 + brightness * 15}%, ${alpha * 0.7})`; const currentSize = baseLightSize * (0.8 + brightness * 1.2); const glowRadius = glowRadiusBase * brightness; drawSingleLight(lightX, lightY, currentSize, color, alpha, glowColor, glowRadius); } } } catch (error) { console.error("Error in drawLightsMode6_Rainbow:", error); } finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+        // 模式 7: 脉冲彩虹扇区
+        function drawLightsMode7_PulsingSectors() { /* ... (代码同前) ... */
+            try { const glowRadiusBase = globalGlowBase; const numSectors = 6; const sectorAngle = Math.PI * 2 / numSectors; const rainbowRotationSpeed = 0.015; const pulseSpeed = 0.06; for (let i = 0; i < numSpokes; i++) { const spokeAngle = (Math.PI * 2 / numSpokes) * i; const currentAnglePositive = (spokeAngle + Math.PI * 2) % (Math.PI * 2); const sectorIndex = Math.floor(currentAnglePositive / sectorAngle); const pulse = 0.5 + 0.5 * Math.sin(time * pulseSpeed + sectorIndex * (Math.PI / numSectors * 2)); for (let j = 0; j < lightsPerSpoke; j++) { const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5); const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke; const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke; const hue = ((spokeAngle + Math.PI) / (Math.PI * 2) * 360 + time * rainbowRotationSpeed * (180 / Math.PI)) % 360; const brightness = pulse; if (brightness > 0.1) { const saturation = 100; const lightness = 55 + brightness * 45; const alpha = brightness * 0.7 + 0.3; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${70 + brightness * 20}%, ${alpha * 0.7})`; const currentSize = baseLightSize * (0.7 + brightness * 1.5); const glowRadius = glowRadiusBase * brightness; drawSingleLight(lightX, lightY, currentSize, color, alpha, glowColor, glowRadius); } } } } catch (error) { console.error("Error in drawLightsMode7_PulsingSectors:", error); } finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+        // 模式 8: 彩虹辐条波浪
+        function drawLightsMode8_RainbowWave() { /* ... (代码同前) ... */
+            try { const glowRadiusBase = globalGlowBase; const waveSpeed = 9; const waveWidth = 4; const rainbowRotationSpeed = 0.025; for (let i = 0; i < numSpokes; i++) { const spokeAngle = (Math.PI * 2 / numSpokes) * i; const hue = ((spokeAngle + Math.PI) / (Math.PI * 2) * 360 + time * rainbowRotationSpeed * (180 / Math.PI)) % 360; for (let j = 0; j < lightsPerSpoke; j++) { const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5); const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke; const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke; const timePhase = time * lightAnimationSpeed; const wavePosition = (timePhase * waveSpeed) % (lightsPerSpoke + waveWidth); const distToWave = Math.abs(j - wavePosition); const brightness = Math.max(0, 1 - distToWave / waveWidth); if (brightness > 0.05) { const saturation = 100; const lightness = 60 + brightness * 40; const alpha = brightness * 0.8 + 0.2; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${75 + brightness * 15}%, ${alpha * 0.8})`; const currentSize = baseLightSize * (0.6 + brightness * 2.0); const glowRadius = glowRadiusBase * (0.6 + brightness * 1.6); drawSingleLight(lightX, lightY, currentSize, color, alpha, glowColor, glowRadius); } } } } catch (error) { console.error("Error in drawLightsMode8_RainbowWave:", error); } finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+        // 模式 9: 闪耀彩虹星辰
+        function drawLightsMode9_SparklingRainbow() { /* ... (代码同前) ... */
+            try { const glowRadiusBase = globalGlowBase - 1; const rainbowRotationSpeed = 0.02; const pulseSpeed = 0.08; const sparkleChance = 0.01; const sparkleSizeMultiplier = 1.8; const sparkleGlowMultiplier = 1.5; for (let i = 0; i < numSpokes; i++) { const spokeAngle = (Math.PI * 2 / numSpokes) * i; for (let j = 0; j < lightsPerSpoke; j++) { const distanceAlongSpoke = (wheelRadius / lightsPerSpoke) * (j + 0.5); const lightX = centerX + Math.cos(spokeAngle) * distanceAlongSpoke; const lightY = centerY + Math.sin(spokeAngle) * distanceAlongSpoke; const hue = ((spokeAngle + Math.PI) / (Math.PI * 2) * 360 + time * rainbowRotationSpeed * (180 / Math.PI)) % 360; const pulse = 0.7 + Math.sin(time * pulseSpeed + j * 0.3 + i * 0.1) * 0.3; const brightness = pulse; const saturation = 100; const lightness = 60 + brightness * 40; const alpha = brightness * 0.7 + 0.3; const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`; const glowColor = `hsla(${hue}, ${saturation}%, ${75 + brightness * 15}%, ${alpha * 0.7})`; const currentSize = baseLightSize * (0.8 + brightness * 1.2); const glowRadius = glowRadiusBase * brightness; drawSingleLight(lightX, lightY, currentSize, color, alpha, glowColor, glowRadius); if (Math.random() < sparkleChance) { const sparkleSize = currentSize * sparkleSizeMultiplier; const sparkleAlpha = 1.0; const sparkleLightness = 95; const sparkleColor = `hsl(${hue}, ${saturation}%, ${sparkleLightness}%)`; const sparkleGlowRadius = glowRadius * sparkleGlowMultiplier; const sparkleGlowColor = `hsla(${hue}, ${saturation}%, 90%, 0.8)`; drawSingleLight(lightX, lightY, sparkleSize, sparkleColor, sparkleAlpha, sparkleGlowColor, sparkleGlowRadius); } } } } catch (error) { console.error("Error in drawLightsMode9_SparklingRainbow:", error); } finally { ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0; }
+        }
+
+
+         // 外圈灯光绘制函数
+         function drawRimLights() { /* ... (代码同前) ... */
+             const rimGlowRadiusBase = 7; const rimPulseSpeed = 0.12; const rimColorSpeed = 2.5;
+             for (let i = 0; i < numRimLights; i++) { const angle = (Math.PI * 2 / numRimLights) * i; const lightX = centerX + Math.cos(angle) * wheelRadius; const lightY = centerY + Math.sin(angle) * wheelRadius; const pulse = 0.65 + Math.sin(time * rimPulseSpeed + i * 0.25) * 0.35; const brightness = pulse; const colorIndex = Math.floor(i / 4 + time * rimColorSpeed) % rimColors.length; const color = rimColors[colorIndex]; const size = baseLightSize * 0.9 * (0.5 + brightness); const alpha = brightness * 0.75 + 0.25; const glowRadius = rimGlowRadiusBase * brightness; let glowColor = color; try { let tempColor = ctx.fillStyle; ctx.fillStyle = color; let hexColor = ctx.fillStyle; ctx.fillStyle = tempColor; if(hexColor.startsWith('#')) { let r = parseInt(hexColor.slice(1, 3), 16); let g = parseInt(hexColor.slice(3, 5), 16); let b = parseInt(hexColor.slice(5, 7), 16); r = Math.min(255, r + 70); g = Math.min(255, g + 70); b = Math.min(255, b + 70); glowColor = `rgba(${r}, ${g}, ${b}, ${alpha * 0.75})`; } } catch(e) { /* ignore */ } drawSingleLight(lightX, lightY, size, color, alpha, glowColor, glowRadius); }
+              ctx.shadowBlur = 0; ctx.shadowColor = 'transparent'; ctx.globalAlpha = 1.0;
+         }
+
+
+        // --- 动画循环 ---
+        function animate() {
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight); // **统一清除背景**
+            time++;
+
+            if (time % modeDuration === 0) {
+                currentMode = (currentMode + 1) % numModes;
+                console.log("切换到模式:", currentMode);
+            }
+
+            drawStars();
+            const structureAlpha = 0.3; // **结构一直保持暗淡**
+            drawStructure(structureAlpha);
+            drawWheelStructure(structureAlpha);
+            drawRimLights(); // **外圈灯一直显示**
+
+            // 根据模式绘制核心灯光效果
+            try { // **在 switch 外层增加总的 try...catch**
+                switch (currentMode) {
+                    case 0: drawLightsMode0(); break;
+                    case 1: drawLightsMode1_Taijitu(); break;
+                    case 2: drawLightsMode2_Butterfly(); break;
+                    case 3: drawLightsMode3_CenterOut(); break;
+                    case 4: drawLightsMode4_PeripheryIn(); break;
+                    case 5: drawLightsMode5_Spiral(); break;
+                    case 6: drawLightsMode6_Rainbow(); break;
+                    case 7: drawLightsMode7_PulsingSectors(); break;
+                    case 8: drawLightsMode8_RainbowWave(); break;
+                    case 9: drawLightsMode9_SparklingRainbow(); break;
+                }
+            } catch(error) {
+                 console.error(`模式 ${currentMode} 绘图时出错:`, error);
+                 // 可以在出错时尝试跳到下一个模式，防止完全卡住
+                 // currentMode = (currentMode + 1) % numModes;
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // --- 启动 ---
+        setupCanvas();
+        animate();
+        window.addEventListener('resize', setupCanvas);
+
+    </script>
+</body>
+</html>
