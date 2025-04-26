@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>彩票号码生成器 (强制单行显示)</title>
+    <title>彩票号码生成器 (最终版V3)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,7 +11,7 @@
     <style>
         body {
             font-family: 'Inter', 'Noto Sans SC', sans-serif;
-            background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%); /* gray-800 to gray-900 */
+            background: linear-gradient(145deg, #2d3748 0%, #1a202c 100%);
         }
         .lotto-button {
             padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600;
@@ -24,74 +24,56 @@
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .lotto-button:active { transform: translateY(0px) scale(1); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); }
-        .btn-dlt { background: linear-gradient(to right, #ef4444, #dc2626); } .btn-dlt:hover { background: linear-gradient(to right, #dc2626, #b91c1c); }
-        .btn-pl3 { background: linear-gradient(to right, #ec4899, #db2777); } .btn-pl3:hover { background: linear-gradient(to right, #db2777, #be185d); }
-        .btn-pl5 { background: linear-gradient(to right, #ec4899, #db2777); } .btn-pl5:hover { background: linear-gradient(to right, #db2777, #be185d); }
-        .btn-qxc { background: linear-gradient(to right, #3b82f6, #2563eb); } .btn-qxc:hover { background: linear-gradient(to right, #2563eb, #1d4ed8); }
-        .btn-clear { background: linear-gradient(to right, #6b7280, #4b5563); } .btn-clear:hover { background: linear-gradient(to right, #4b5563, #374151); }
-
-        #display-area {
-             font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
-             background-color: rgba(17, 24, 39, 0.85);
-             backdrop-filter: blur(8px);
-             border: 1px solid rgba(255, 255, 255, 0.15);
-             min-height: 350px;
-             max-height: 60vh;
-             overflow-y: auto;
-             /* **增加横向滚动条以防万一** */
-             overflow-x: auto;
-             padding: 1rem 1.5rem; /* p-4 sm:p-6 */
-        }
-        /* 垂直列表样式 */
-        .lotto-set-list {
-            display: flex; align-items: center; margin-bottom: 1rem; /* mb-4 */
-            padding-bottom: 1rem; /* pb-4 */
-            border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
-            /* **确保列表项本身不换行内部内容** */
-            white-space: nowrap;
-        }
-        .lotto-set-list:last-child { border-bottom: none; margin-bottom: 0; }
-        .set-index-list {
-            width: 3rem; /* w-12 */
-            text-align: center; color: #d1d5db; /* gray-300 */
-            font-size: 1.25rem; /* text-xl */ font-weight: bold;
-            margin-right: 1.5rem; /* mr-6 */ flex-shrink: 0;
-        }
+        /* Updated number ball grid display style */
         .number-balls-container-list {
-             display: flex;
-             /* **强制不换行** */
-             flex-wrap: nowrap;
-             align-items: center;
+            display: grid;
+            grid-template-columns: repeat(7, 1fr); /* 7 columns for each row */
+            gap: 10px;
+            justify-items: center; /* Center the numbers */
+            align-items: center;
+            padding: 10px 0;
         }
 
-        /* 号码球样式 */
+        /* Number ball styling (size and colors) */
         .number-ball {
-            width: 56px; height: 56px; border-radius: 50%; display: inline-flex;
-            justify-content: center; align-items: center;
-            font-family: Arial, Helvetica, sans-serif; font-weight: bold;
-            font-size: 1.5rem; /* text-2xl */ color: white; margin: 5px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.35); transition: transform 0.2s ease;
-            border: 1px solid rgba(0, 0, 0, 0.25); flex-shrink: 0;
+            width: 50px; 
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: white;
+            background-color: #F87171; /* Default for red balls */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
+            transition: transform 0.2s ease;
+            border: 1px solid rgba(0, 0, 0, 0.25);
+            flex-shrink: 0;
         }
-         .number-ball:hover { transform: scale(1.08); }
 
-        /* 颜色样式 (基于 002.JPG) */
-        .ball-dlt-front { background: radial-gradient(circle at 65% 35%, #60a5fa, #2563eb 80%); } /* Blue */
-        .ball-dlt-back { background: radial-gradient(circle at 65% 35%, #fbbf24, #f59e0b 80%); } /* Yellow/Amber */
-        .ball-pl3 { background: radial-gradient(circle at 65% 35%, #f472b6, #db2777 80%); } /* Pink */
-        .ball-pl5 { background: radial-gradient(circle at 65% 35%, #f472b6, #db2777 80%); } /* Pink */
-        .ball-qxc-main { background: radial-gradient(circle at 65% 35%, #8b5cf6, #5b21b6 80%); } /* Violet */
-        .ball-qxc-last { background: radial-gradient(circle at 65% 35%, #fb923c, #f97316 80%); } /* Orange */
+        .number-ball:hover {
+            transform: scale(1.08);
+        }
 
+        /* Color customization for different lottery types */
+        .ball-dlt-front { background: radial-gradient(circle at 65% 35%, #60a5fa, #2563eb 80%); }
+        .ball-dlt-back { background: radial-gradient(circle at 65% 35%, #fbbf24, #f59e0b 80%); }
+        .ball-pl3 { background: radial-gradient(circle at 65% 35%, #f472b6, #db2777 80%); }
+        .ball-pl5 { background: radial-gradient(circle at 65% 35%, #f472b6, #db2777 80%); }
+        .ball-qxc-main { background: radial-gradient(circle at 65% 35%, #8b5cf6, #5b21b6 80%); }
+        .ball-qxc-last { background: radial-gradient(circle at 65% 35%, #fb923c, #f97316 80%); }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-200 min-h-screen flex items-center justify-center p-4">
+<body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col items-center justify-center p-4">
 
-    <div class="w-full max-w-4xl bg-gray-800 bg-opacity-60 backdrop-blur-md rounded-xl shadow-xl p-6 md:p-10">
+    <div class="w-full max-w-3xl bg-gray-800 bg-opacity-60 backdrop-blur-md rounded-xl shadow-xl p-6 md:p-10">
         <h1 class="text-3xl md:text-4xl font-bold text-center mb-8 text-white">彩票号码生成器</h1>
 
-        <div id="display-area" class="w-full mb-8 rounded-lg text-lg leading-relaxed text-center text-gray-400 flex items-center justify-center">
+        <div id="display-area" class="w-full mb-8 rounded-lg text-lg leading-relaxed text-center text-gray-400 flex flex-col items-center justify-center">
             <span>请选择彩票类型生成号码</span>
+            <!-- Number grid will be displayed here -->
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
@@ -115,70 +97,142 @@
         const clearBtn = document.getElementById('clear-btn');
 
         // --- Helper Functions ---
-        function getRandomInt(min, max) { /* ... (代码同前) ... */ min = Math.ceil(min); max = Math.floor(max); return Math.floor(Math.random() * (max - min + 1)) + min; }
-        function getUniqueRandomInts(n, min, max) { /* ... (代码同前) ... */ if (n > (max - min + 1)) { console.error("Cannot generate more unique numbers than the range allows."); return []; } const numbers = new Set(); while (numbers.size < n) { numbers.add(getRandomInt(min, max)); } return Array.from(numbers).sort((a, b) => a - b); }
-        function formatNumber(num) { return num.toString().padStart(2, '0'); }
+        function getRandomInt(min, max) {
+            min = Math.ceil(min);
+            max = Math.floor(max);
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function getUniqueRandomInts(n, min, max) {
+            if (n > (max - min + 1)) {
+                console.error("Cannot generate more unique numbers than the range allows.");
+                return [];
+            }
+            const numbers = new Set();
+            while (numbers.size < n) {
+                numbers.add(getRandomInt(min, max));
+            }
+            return Array.from(numbers).sort((a, b) => a - b);
+        }
+
+        function formatNumber(num) {
+            return num.toString().padStart(2, '0');
+        }
 
         // --- Lottery Number Generation Functions ---
-        function generateSuperLottoSet() { /* ... (代码同前) ... */ const front = getUniqueRandomInts(5, 1, 35); const back = getUniqueRandomInts(2, 1, 12); return { front, back }; }
-        function generatePermutation3Set() { /* ... (代码同前) ... */ const numbers = []; for (let i = 0; i < 3; i++) { numbers.push(getRandomInt(0, 9)); } return numbers; }
-        function generatePermutation5Set() { /* ... (代码同前) ... */ const numbers = []; for (let i = 0; i < 5; i++) { numbers.push(getRandomInt(0, 9)); } return numbers; }
-        function generateSevenStarSet() { /* ... (代码同前) ... */ const numbers = []; for (let i = 0; i < 7; i++) { numbers.push(getRandomInt(0, 9)); } return numbers; }
+        function generateSuperLottoSet() {
+            const front = getUniqueRandomInts(5, 1, 35);
+            const back = getUniqueRandomInts(2, 1, 12);
+            return { front, back };
+        }
 
-        // --- Display Function (使用垂直列表布局和 002.JPG 颜色) ---
+        function generatePermutation3Set() {
+            const numbers = [];
+            for (let i = 0; i < 3; i++) {
+                numbers.push(getRandomInt(0, 9));
+            }
+            return numbers;
+        }
+
+        function generatePermutation5Set() {
+            const numbers = [];
+            for (let i = 0; i < 5; i++) {
+                numbers.push(getRandomInt(0, 9));
+            }
+            return numbers;
+        }
+
+        function generateSevenStarSet() {
+            const numbers = [];
+            for (let i = 0; i < 7; i++) {
+                numbers.push(getRandomInt(0, 9));
+            }
+            return numbers;
+        }
+
+        // --- Display Function ---
         function displayNumbers(sets, type) {
             displayArea.innerHTML = '';
-            // **移除 displayArea 的 flex 样式**
-            displayArea.classList.remove('flex', 'flex-wrap', 'justify-center', 'gap-4', 'items-center', 'text-center');
-            displayArea.classList.add('text-left'); // 确保容器内文本默认左对齐
+            displayArea.classList.remove('items-center', 'justify-center', 'text-center');
+            displayArea.classList.add('text-left');
 
-            let contentHtml = ''; // **直接构建列表项**
+            let contentHtml = '';
 
-            sets.forEach((set, index) => {
-                // **使用垂直列表的 class**
+            sets.forEach((set) => {
                 contentHtml += `<div class="lotto-set-list">`;
-                contentHtml += `<span class="set-index-list">${index + 1}.</span>`;
-                // **使用强制不换行的容器 class**
                 contentHtml += `<div class="number-balls-container-list">`;
 
                 switch(type) {
                     case 'dlt':
-                        set.front.forEach(num => { contentHtml += `<div class="number-ball ball-dlt-front">${formatNumber(num)}</div>`; });
-                        contentHtml += `<span class="mx-1 text-gray-400 font-bold text-xl">+</span>`;
-                        set.back.forEach(num => { contentHtml += `<div class="number-ball ball-dlt-back">${formatNumber(num)}</div>`; });
+                        set.front.forEach(num => {
+                            contentHtml += `<div class="number-ball ball-dlt-front">${formatNumber(num)}</div>`;
+                        });
+                        // Removed the + sign here
+                        set.back.forEach(num => {
+                            contentHtml += `<div class="number-ball ball-dlt-back">${formatNumber(num)}</div>`;
+                        });
                         break;
                     case 'pl3':
-                         set.forEach(num => { contentHtml += `<div class="number-ball ball-pl3">${num}</div>`; });
-                         break;
+                        set.forEach(num => {
+                            contentHtml += `<div class="number-ball ball-pl3">${num}</div>`;
+                        });
+                        break;
                     case 'pl5':
-                         set.forEach(num => { contentHtml += `<div class="number-ball ball-pl5">${num}</div>`; });
-                         break;
+                        set.forEach(num => {
+                            contentHtml += `<div class="number-ball ball-pl5">${num}</div>`;
+                        });
+                        break;
                     case 'qxc':
-                         set.forEach((num, idx) => {
-                             const ballClass = (idx === set.length - 1) ? 'ball-qxc-last' : 'ball-qxc-main';
-                             contentHtml += `<div class="number-ball ${ballClass}">${num}</div>`;
-                         });
-                         break;
+                        set.forEach((num, idx) => {
+                            const ballClass = (idx === set.length - 1) ? 'ball-qxc-last' : 'ball-qxc-main';
+                            contentHtml += `<div class="number-ball ${ballClass}">${num}</div>`;
+                        });
+                        break;
                 }
-                contentHtml += `</div></div>`; // Close container and set div
+                contentHtml += `</div></div>`;
             });
 
             displayArea.innerHTML = contentHtml;
         }
 
         // --- Event Listeners ---
-        btnDlt.addEventListener('click', () => { const sets = []; for (let i = 0; i < 5; i++) { sets.push(generateSuperLottoSet()); } displayNumbers(sets, 'dlt'); });
-        btnPl3.addEventListener('click', () => { const sets = []; for (let i = 0; i < 5; i++) { sets.push(generatePermutation3Set()); } displayNumbers(sets, 'pl3'); });
-        btnPl5.addEventListener('click', () => { const sets = []; for (let i = 0; i < 5; i++) { sets.push(generatePermutation5Set()); } displayNumbers(sets, 'pl5'); });
-        btnQxc.addEventListener('click', () => { const sets = []; for (let i = 0; i < 5; i++) { sets.push(generateSevenStarSet()); } displayNumbers(sets, 'qxc'); });
-
-        clearBtn.addEventListener('click', () => {
-             displayArea.innerHTML = '<span>请选择彩票类型生成号码</span>';
-             // 恢复初始居中样式
-             displayArea.classList.remove('text-left');
-             displayArea.classList.add('items-center', 'justify-center', 'text-center');
+        btnDlt.addEventListener('click', () => {
+            const sets = [];
+            for (let i = 0; i < 5; i++) {
+                sets.push(generateSuperLottoSet());
+            }
+            displayNumbers(sets, 'dlt');
         });
 
+        btnPl3.addEventListener('click', () => {
+            const sets = [];
+            for (let i = 0; i < 5; i++) {
+                sets.push(generatePermutation3Set());
+            }
+            displayNumbers(sets, 'pl3');
+        });
+
+        btnPl5.addEventListener('click', () => {
+            const sets = [];
+            for (let i = 0; i < 5; i++) {
+                sets.push(generatePermutation5Set());
+            }
+            displayNumbers(sets, 'pl5');
+        });
+
+        btnQxc.addEventListener('click', () => {
+            const sets = [];
+            for (let i = 0; i < 5; i++) {
+                sets.push(generateSevenStarSet());
+            }
+            displayNumbers(sets, 'qxc');
+        });
+
+        clearBtn.addEventListener('click', () => {
+            displayArea.innerHTML = '<span>请选择彩票类型生成号码</span>';
+            displayArea.classList.remove('text-left');
+            displayArea.classList.add('items-center', 'justify-center', 'text-center');
+        });
     </script>
 
 </body>
