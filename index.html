@@ -24,27 +24,27 @@
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .lotto-button:active { transform: translateY(0px) scale(1); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); }
-        /* Updated number ball grid display style */
+        /* Adjust number ball size */
         .number-balls-container-list {
             display: grid;
-            grid-template-columns: repeat(7, 1fr); /* 7 columns for each row */
-            gap: 10px;
-            justify-items: center; /* Center the numbers */
+            grid-template-columns: repeat(5, 1fr); /* 5 columns per row */
+            gap: 8px;
+            justify-items: center;
             align-items: center;
             padding: 10px 0;
         }
 
         /* Number ball styling (size and colors) */
         .number-ball {
-            width: 50px; 
-            height: 50px;
+            width: 40px; 
+            height: 40px;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             font-family: Arial, Helvetica, sans-serif;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1rem; /* smaller font size */
             color: white;
             background-color: #F87171; /* Default for red balls */
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35);
@@ -57,9 +57,8 @@
             transform: scale(1.08);
         }
 
-        /* Color customization for different lottery types */
+        /* Custom colors */
         .ball-dlt-front { background: radial-gradient(circle at 65% 35%, #60a5fa, #2563eb 80%); }
-        /* Change yellow ball font color to black */
         .ball-dlt-back { background: radial-gradient(circle at 65% 35%, #fbbf24, #f59e0b 80%); color: black; }
         .ball-pl3 { background: radial-gradient(circle at 65% 35%, #f472b6, #db2777 80%); }
         .ball-pl5 { background: radial-gradient(circle at 65% 35%, #f472b6, #db2777 80%); }
@@ -69,7 +68,7 @@
         /* Media Queries for responsiveness */
         @media (max-width: 768px) {
             .number-balls-container-list {
-                grid-template-columns: repeat(5, 1fr); /* Adjust number of columns for smaller screens */
+                grid-template-columns: repeat(5, 1fr); /* Ensure 5 columns even on medium screens */
             }
 
             .lotto-button {
@@ -79,7 +78,7 @@
 
         @media (max-width: 480px) {
             .number-balls-container-list {
-                grid-template-columns: repeat(4, 1fr); /* Adjust to 4 columns on very small screens */
+                grid-template-columns: repeat(4, 1fr); /* Adjust to 4 columns on small screens */
             }
 
             .lotto-button {
@@ -95,7 +94,6 @@
 
         <div id="display-area" class="w-full mb-8 rounded-lg text-lg leading-relaxed text-center text-gray-400 flex flex-col items-center justify-center">
             <span>请选择彩票类型生成号码</span>
-            <!-- Number grid will be displayed here -->
         </div>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
