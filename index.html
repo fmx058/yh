@@ -24,20 +24,21 @@
             box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.1);
         }
         .lotto-button:active { transform: translateY(0px) scale(1); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08); }
-        /* Adjust number ball size and distance based on the image */
+
+        /* Set gap to 0 for no space between balls */
         .number-balls-container-list {
-            display: grid;
-            grid-template-columns: repeat(7, auto); /* 7 items in a row */
-            gap: 6px; /* Adjusting the gap between balls */
-            justify-items: center;
+            display: flex; /* Use flexbox for no spacing */
+            justify-content: center; /* Center the balls */
             align-items: center;
+            flex-wrap: wrap; /* Allow wrapping to next line */
+            gap: 0; /* No space between balls */
             padding: 8px 0;
         }
 
-        /* Number ball styling (size and font adjusted) */
+        /* Number ball styling (no space and adjusted size) */
         .number-ball {
-            width: 40px; 
-            height: 40px;
+            width: 35px; /* Slightly reduced ball size */
+            height: 35px; /* Slightly reduced ball size */
             border-radius: 50%;
             display: flex;
             justify-content: center;
